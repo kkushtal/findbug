@@ -1,5 +1,5 @@
 import java.time.Instant
-import scala.annotation.tailrec
+
 import scala.util.{Failure, Success, Try}
 
 object FindBug extends App {
@@ -13,23 +13,18 @@ object FindBug extends App {
     case i => Success(s"result $i")
   }.map(Result))
 
-  def processResult(result: Result, errLogRecord: String): Unit = result match {
+
+  def processResult(errLogRecord: String)(result: Result): Unit = result match {
     case Result(Failure(_)) =>
       println(s"result $result failed: $errLogRecord")
     case Result(Success(_)) =>
   }
 
-  @tailrec def processResultRec(results: Seq[Result], errLogRecord: String): Unit = results match {
-    case results if results.isEmpty => ()
-    case results =>
-      processResult(results.head, errLogRecord)
-      processResultRec(results.tail, errLogRecord)
-  }
-
   //here goes!
   val startTime = Instant.now()
 
-  processResultRec(batch.results, s"in batch ${batch.toString}")
+  val curried = processResult(s"in batch ${batch.toString}") _
+  batch.results.map(curried)
 
   println(s"processed in ${Instant.now().toEpochMilli - startTime.toEpochMilli} millis")
 }
